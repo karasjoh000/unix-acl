@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project (cs483_p1)
-add_executable (main src/acl.c src/get.c src/getregex.c src/debug.c src/main.c)
 include_directories(src/include)
+set(INC_DIR src/include/)
+set(HEADERS ${INC_DIR}/acl.h ${INC_DIR}/get.h ${INC_DIR}/getregex.h ${INC_DIR}/debug.h)
+set(SOURCES src/acl.c src/get.c src/getregex.c src/debug.c src/main.c ${HEADERS})
+add_executable (main ${SOURCES})

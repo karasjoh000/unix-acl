@@ -14,6 +14,7 @@
 #include <regex.h>
 #include <debug.h>
 #include <get.h>
+#include <fcntl.h>
 
 
 /***************************
@@ -47,20 +48,38 @@ int main(int argc, char **argv) {
     char acl[strlen(argv[1]) + strlen(ACL_EXT)];
 
     UIDINFO info;
+    struct stat aclb, sourceb;
+
 
     info.effective = geteuid();
-    info.real = getuid();
+
     info.aclFile = createAclPath(argv[1], acl);
     info.sourceFile = argv[1];
-    info.destFile = argv[2];
 
-    if (DEBUG) printf("real uid: %d effective uid: %d\n", info.real, info.effective);
- 
+    info.euid_source_stat = &sourceb;
+    info.euid_acl_stat = &aclb;
+    //get the stat structs
+
+    if (lstat(info.aclFile, info.euid_acl_stat) == -1 || lstat(info.sourceFile, info.euid_source_stat) == -1)
+        exit(1);
+
+    info.aclfd = open(info.aclFile, O_RDONLY);
+    info.sourcefd = open(info.sourceFile, O_RDONLY);
+
+    //switch to real.
     if(seteuid(info.real) == -1) {
         euiderr();
-        if(DEBUG) perror("ERROR:"); 
+        if(DEBUG) perror("ERROR:");
         exit(0);
     }
+
+    if (info.aclfd == -1 || info.sourcefd == -1)
+        exit(1);
+
+    info.destFile = argv[2];
+    info.real = getuid();
+
+    if (DEBUG) printf("real uid: %d effective uid: %d\n", info.real, info.effective);
 
     if (!get(&info)) {
         exit(0);
@@ -69,6 +88,9 @@ int main(int argc, char **argv) {
     if (!copy(&info)) {
         exit(0);
     }
+
+    close(info.sourcefd);
+    close(info.aclfd);
 
     return 0;
 }

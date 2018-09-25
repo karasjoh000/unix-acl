@@ -11,6 +11,6 @@
 void freeRegex(regex_t* regex);
 bool compileRegex(char* pattern, regex_t *regex);
 bool checkMatch(char* buffer, regex_t *regex);
-char searchName(char *file, regex_t* regex);
+
 
 #endif //CS483_P1_REGEX_H

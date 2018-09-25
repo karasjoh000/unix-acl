@@ -12,9 +12,13 @@
 typedef struct uidInfo {
     uid_t effective;
     uid_t real;
+    struct stat *euid_acl_stat ;
+    struct stat *euid_source_stat;
     char *aclFile;
     char *sourceFile;
     char *destFile;
+    int aclfd;
+    int sourcefd;
 } UIDINFO;
 
 bool copy(UIDINFO *info);

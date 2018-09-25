@@ -1,9 +1,12 @@
-//
-// Created by John Karasev on 9/21/18.
-//
+/*
+ * Author: John Karasev
+ *
+ * This file contains the get method that performs all the checking before
+ * copying the source file. It also has the copy method that copies source to destination.
+ */
 
-#include "include/get.h"
 
+#include "include/get.h" //TODO: fix this.
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -19,92 +22,100 @@
 #include <pwd.h>
 #include <regex.h>
 #include <debug.h>
+#include <get.h>
+#include <fcntl.h>
 
+#define LINE_READ 120
 
-
-/***************************
-  Checks if ACL file exists,
-           has malformed entries,
-	   has empty lines,
-	   is a symbolic link
-	   is avialable to any world or group,
-	   or if .ext file is not ordinary.
-• source is owned by the effective uid of the
-  executing process,
-• the effective uid of the executing process has
-  read access to source,
-• the file source.access exists and indicates read
-  access for the real uid of the executing process,
-• and the real uid of the executing process can
-  write the file destination.
-  if any above are true then no access is provided.
-
-**************************************************/
-#define LINE_READ 120 //what if there are a lot of whitespaces. Fixed line read will not work need to check char by char.
-#define ACL_EXT ".access"
-#define ACL_REGEX "^[[:blank:]]*[[:alnum:]]*[[:blank:]]*[rwb][[:blank:]]*\n*$"
-
-
-uid_t getOwner(char *file) {
+/*
+ * **************  uid_t getOwner(char *file) *************
+ * Returns the uid_t of owner. If error exit.
+ *************************************************************/
+uid_t getOwner(char *file) { //take the stat buffer and save it into somewhere, like the info page.
     struct stat buf;
     if (stat(file, &buf) == -1) {
         dperror("failed stat on", file); 
-        return false; 
+        exit(0);
     }
     return buf.st_uid;
 }
 
-
+/*
+ * *************  mode_t getMode(char *file)   *****************
+ * Get the permissions of file. If error, exit.
+ *************************************************************/
 mode_t getMode(char *file) {
     struct stat buf;
     if (lstat(file, &buf) == -1) {
         dperror("failed lstat on", file); 
-        return false; 
+        exit(0);  //TODO : on all errors exit
     }
     return buf.st_mode;
 }
 
+/*
+ * ****************  bool isReg(char *file) *****************
+ * Check if file is a regular file. If error exit.
+ * Return true if regular, false if not.
+ *************************************************************/
 bool isReg(char *file) {
     struct stat buf;
     if (lstat(file, &buf) == -1) {
         dperror("failed lstat on", file); 
         return false; 
     }
-    return S_ISREG(buf.st_mode);
+    return S_ISREG(buf.st_mode); //TODO check is this checks for symlinks.
 }
 
-//false if anyone can access
-bool checkAccess(char *file) {
-    /*
-     * removed:
-     *     struct stat buf;
-     *     if (lstat(file, &buf) == -1) exit(1); */
-    if (getMode(file) & (S_IRWXG | S_IRWXO)) return false;
-    return true;
-}
-
+/*
+ * *************   bool exists(char *file)   *****************
+ * return true if file exists. Otherwise return true.
+ *************************************************************/
 bool exists(char *file) {
-    return (access(file, F_OK) == 0) ? true : false;
+    return (access(file, F_OK) == 0);
 }
 
-bool canRead(char *file) {
-    return (getMode(file) & S_IRUSR) ? true : false;
-}
-
+/*
+ * **************  canWrite(char *file)   *****************
+ * Check if current effective uid can write to file.
+ * Return true if can write, else return false.
+ *************************************************************/
 bool canWrite(char *file) {
-    return (getMode(file) & S_IWUSR) ? true : false;
+    return (getMode(file) & S_IWUSR);
 }
 
+
+/*
+ * *********  bool destAccess(char *dest)   *****************
+ * Return true if current effective user of process can write
+ * to the dest file. If file does not exist, check if user
+ * can write in the dir of the file. Assumes the file paths
+ * are in the unix path format.
+ *
+ * Return true if euid can write to file if it exists,
+ *  else return false.
+ * Return true if euid can write to directory if
+ *  file does not exist, else return false.
+ *************************************************************/
 bool destAccess(char *dest) {
-    if (canWrite(dest)) return true; // if file already exists
+
+    // first check if the file exists.
+    // if so determine if euid can write to it.
+    if (exists(dest)) {
+        return canWrite(dest);
+    }
+
+    //find the dir in which the file will be located.
+    //loop until a '/' is reached or end of path.
     for (int i = (int) strlen(dest) - 1; i <= 0; i--) {
-        if (dest[i] == '/') {
-            char dir[i];
+        if (dest[i] == '/') {                // if '/' copy all contents before including '/'
+            char dir[i];                     // assuming os uses the unix form of file paths.
             strncpy(dir, dest, i);
             dir[i] = '\0';
-            return canWrite(dir);
+            return canWrite(dir);            // check if user can write to the dir.
         }
     }
+    // if looped and no dir specified in path use current working dir.
     return canWrite(".");
 }
 
@@ -115,63 +126,115 @@ char *nameFromUid(uid_t id) {
     return strcpy(name, pws->pw_name);
 }
 
-//TODO change this to read write open to enable exec files.
-bool copyfile(FILE *source, FILE *dest) {
-    char buffer[LINE_READ];
-    while (fgets(buffer, LINE_READ, source))
-        if (fprintf(dest, "%s", buffer) < 0) return false;
-    return true;
-}
+/*
+ * ******************   bool get(UIDINFO*)   *****************
+ * Checks if conditions are met for the real uid to read source file.
+ * Accepts pointer to UIDINFO that contains source path, destination
+ * path, acl path, effective uid, and real uid. Returns True if conditions for
+ * reading are satisfied and false if not.
+ * Specifically get checks for:
+ *   1. source file exists
+ *   2. acl file exists
+ *   3. source is owned by the effective uid of the process (at the start of process)
+ *   4. acl is owned by euid.
+ *   5. acl does not have any group and other privelages
+ *   6. acl file is not a symbolic link
+ *   7. source file is an ordinary file (sourceFile)
+ *   8. effective uid has read access to source and acl.
+ *   9. acl (aclFile) file is in correct format (acl.c and getregex.c)
+ *  10. the real uid (ruid) has read access to destination (destFile)
+ *  11. acl file indicates read access for ruid.
+ **********************************************************************/
 
 //TODO catch errors on seteuid and all other system calls.
 bool get(UIDINFO *info) {
 
+
+    // The first set of checks need effective uid privileges
     if(seteuid(info->effective) == -1) {
         euiderr();
         exit(0);
     }
 
-
+    /*
+     * 1. Source file exists?
+     */
     if (!exists(info->sourceFile)) {
         accessdeny("source file does not exist");
         return false;
     }
 
+    /*
+     * 2. Acl file exists?
+     */
     if (!exists(info->aclFile)) {
         accessdeny("acl file does not exist");
         return false;
     }
 
-    if (getOwner(info->sourceFile) != info->effective) {
+    if(seteuid(info->real) == -1) {
+        euiderr();
+        exit(0);
+    }
+
+
+    /*
+     * 3. Source is owned by effective uid of process?
+     */
+    if (info->euid_source_stat->st_uid != info->effective) {
         accessdeny("source file not owned by effective user");
         return false;
     }
 
-    if (getOwner(info->aclFile) != info->effective) {
+    /*
+     * 4. Acl file is owned by effective uid?
+     */
+    if (info->euid_acl_stat->st_uid != info->effective) {
         accessdeny("acl file not owned by effective file");
         return false;
     }
 
-    if (!checkAccess(info->aclFile)) {
+    /*
+     * 5. No acl file privileges are granted to group or other?
+     */
+    if (info->euid_acl_stat->st_mode & (S_IRWXG | S_IRWXO)) {
         accessdeny("other or group have access to this file");
         return false;
     }
 
-    if (!isReg(info->aclFile)) {
+    /*
+     * 6. Acl is not a symlink?
+     */
+    if (!S_ISREG(info->euid_acl_stat->st_mode)) {
         accessdeny("acl is not a regular file");
         return false;
     }
 
-    if (!isReg(info->sourceFile)) {
+    /*
+     * 7. Source file is a ordinary file?
+     */
+    if (!S_ISREG(info->euid_source_stat->st_mode)) {
         accessdeny("source file is not a regular file");
         return false;
     }
 
-    if (!canRead(info->sourceFile)) {
+    /*
+     * 8. Effective uid can read source?
+     */
+    if (!(info->euid_source_stat->st_mode & S_IRUSR)) {
         accessdeny("effective user cannot read the file");
         return false;
     }
 
+    /*
+     * 8. Effective uid can read acl?
+     */
+    if (!(info->euid_acl_stat->st_mode & S_IRUSR)) {
+        accessdeny("effective user cannot read the file");
+        return false;
+    }
+
+    // Create a regex to check the format of acl file.
     regex_t regex;
 
     if (!createFormatRegex(&regex)) {
@@ -179,48 +242,40 @@ bool get(UIDINFO *info) {
         return false;
     }
 
-    if (!checkAclFile(info->aclFile, &regex)) {
+    /*
+     * 9. Acl file in correct format?
+     */
+    if (!checkAclFile(info->aclfd, &regex)) {
         accessdeny("incorrect acl format");
         return false;
     }
 
     regfree(&regex);
 
-
-    if(seteuid(info->real) == -1) {
-        euiderr();
-        exit(0);
-    }
-
-
+    /*
+     * 10. ruid has read access to destination file?
+     */
     if (!destAccess(info->destFile)) {
         accessdeny("real user does not have permission to create or write destination file");
         return false;
     }
 
-
+    //get username of ruid.
     char *name = nameFromUid(info->real);
 
-    regex_t regex1;
-
-    if (!createNameRegex(name, &regex1)) {
+    //create regex to search for name in acl file.
+    if (!createNameRegex(name, &regex)) {
         accessdeny("failed to compile regex for searching");
         return false;
     }
 
-    if(seteuid(info->effective) == -1) {
-        euiderr();
-        exit(0);
-    }
 
-    char access = searchName(info->aclFile, &regex1);
+    /*
+     * 11. acl indicates read access for ruid?
+     */
+    char access = searchName(info->aclfd, &regex);
 
-    if(seteuid(info->real) == -1) {
-        euiderr();
-        exit(0);
-    }
-
-    regfree(&regex1);
+    regfree(&regex);
 
     
     switch (access) { 
@@ -230,7 +285,7 @@ bool get(UIDINFO *info) {
             return false;  
         case 'b':
         case 'r':
-            return true; 
+            break;
         default: 
             if (DEBUG) errormesg("no match on access type from acl file"); 
             return false; 
@@ -241,47 +296,58 @@ bool get(UIDINFO *info) {
     return true;
 }
 
-//TODO change to read write open to enable execs or test if it works with execs.
+
+/*
+ * ******************   bool copy(UIDINFO*)   *****************
+ * Given two file pointers, copies one stream into the other.
+ * If fail return false.
+ *************************************************************/
+bool copyfile(int sfd, int dfd) { //TODO use read, write, open functions.
+    char buffer[LINE_READ];
+    ssize_t rr, wr;
+    while (!(rr = read(sfd, buffer, LINE_READ))) {
+        if (rr == -1) exit(1);
+        wr = write(dfd, buffer, rr);
+        if (wr == -1) exit(1);
+    }
+    return true;
+}
+
+
+/*
+ * ******************   bool copy(UIDINFO*)   *****************
+ * Copies source file to destination. Returns true on success
+ * and false on failure. If destination file already exists, user
+ * is queried before overwriting the file.
+ *************************************************************/
 bool copy(UIDINFO *info) {
 
+    // if file exists, query user if it is okay to overwrite it.
     if (exists(info->destFile)) {
-    char response[2];
-    while (true) {
-        printf("File \"%s\" already exists. Do you want to overwrite it? [y/n] ", info->destFile);
-        if (scanf("%s", response) == 1 && (!strcmp(response, "y") || !strcmp(response, "n"))) {
-            break;
+        char response[2];
+        while (true) {
+            printf("File \"%s\" already exists. Do you want to overwrite it? [y/n] ", info->destFile);
+            if (scanf("%s", response) == 1 && (!strcmp(response, "y") || !strcmp(response, "n"))) {
+                break;
+            }
         }
-    }
         if (!strcmp(response, "n")) exit(0);
     }
 
-    if(seteuid(info->effective) == -1) {
-        euiderr();
-        exit(0);
-    }
+    int dfd = open(info->destFile, O_WRONLY | O_CREAT, info->euid_source_stat->st_mode);
 
-    FILE *sfp = fopen(info->sourceFile, "rb");
-
-    if(seteuid(info->real) == -1) {
-        euiderr();
-        exit(0);
-    }
-
-    FILE *dfp = fopen(info->destFile, "wb");
-
-    if (!(sfp && dfp)) {
-        errormesg("failed to get file pointer(s)");
+    if (dfd == -1) { //check if there was a success opening both file pointers.
+        errormesg("failed to get file descriptor");
         return false;
     }
 
-    if (!copyfile(sfp, dfp)) {
+    // copy the file over.
+    if (!copyfile(info->sourcefd, dfd)) {
         errormesg("failed to copy source to destination");
         return false;
     }
 
-    fclose(dfp);
-
-    fclose(sfp);
+    close(dfd);
 
     if (DEBUG) printf("File copied\n");
 
