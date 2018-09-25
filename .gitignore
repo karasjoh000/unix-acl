@@ -3,3 +3,4 @@ dest
 run
 cmake-build-debug
 get
+.idea

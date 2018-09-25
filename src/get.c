@@ -150,6 +150,7 @@ char *nameFromUid(uid_t id) {
 bool get(UIDINFO *info) {
 
 
+
     // The first set of checks need effective uid privileges
     if(seteuid(info->effective) == -1) {
         euiderr();
@@ -259,7 +260,6 @@ bool get(UIDINFO *info) {
         accessdeny("real user does not have permission to create or write destination file");
         return false;
     }
-
     //get username of ruid.
     char *name = nameFromUid(info->real);
 
@@ -302,15 +302,14 @@ bool get(UIDINFO *info) {
  * Given two file pointers, copies one stream into the other.
  * If fail return false.
  *************************************************************/
-bool copyfile(int sfd, int dfd) { //TODO use read, write, open functions.
+void copyfile(int sfd, int dfd) { //TODO use read, write, open functions.
     char buffer[LINE_READ];
     ssize_t rr, wr;
-    while (!(rr = read(sfd, buffer, LINE_READ))) {
+    while ((rr = read(sfd, buffer, LINE_READ))) {
         if (rr == -1) exit(1);
         wr = write(dfd, buffer, rr);
         if (wr == -1) exit(1);
     }
-    return true;
 }
 
 
@@ -342,10 +341,7 @@ bool copy(UIDINFO *info) {
     }
 
     // copy the file over.
-    if (!copyfile(info->sourcefd, dfd)) {
-        errormesg("failed to copy source to destination");
-        return false;
-    }
+    copyfile(info->sourcefd, dfd);
 
     close(dfd);
 

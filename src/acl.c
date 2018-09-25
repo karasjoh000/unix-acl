@@ -65,8 +65,9 @@ bool readline(int fd, char* buffer) {
     ssize_t rd;
     do {
         if ( i > LINE_READ) exit(1);
-        if ((rd = read(fd, buffer, 1)) == -1) exit(1);
+        if ((rd = read(fd, &buffer[i], 1)) == -1) exit(1);
     } while(buffer[i++] != '\n');
+    buffer[i] = '\0';
     if (!rd) return true;
     return false;
 }
@@ -79,7 +80,7 @@ bool readline(int fd, char* buffer) {
  *************************************************************/
 bool checkAclFile(int fd, regex_t* regex) {
     char buffer[LINE_READ];
-    while (readline(fd, buffer)) {
+    while (!readline(fd, buffer)) {
         if (buffer[0] == '#') continue;
         if (!checkMatch(buffer, regex)) {
             if (DEBUG) printf("failed on this line:\n%s\n", buffer);
@@ -112,7 +113,7 @@ char getAccessType(char* buffer) {
 char searchName(int fd, regex_t* regex) {
 
     char buffer[LINE_READ];
-    while (readline(fd, buffer)) {
+    while (!readline(fd, buffer)) {
         if (buffer[0] == '#') continue;
         if (checkMatch(buffer, regex)) {
             if (DEBUG) printf("match on:\n%s", buffer);
