@@ -14,7 +14,7 @@ char *createAclPath(char *source, char *aclFile);
 bool createNameRegex(char* name, regex_t* regex);
 bool createFormatRegex(regex_t *regex);
 bool checkAclFile(int fd, regex_t* regex);
-char searchName(int fd, regex_t* regex)
+char searchName(int fd, regex_t* regex);
 
 
 #endif //CS483_P1_ACL_H

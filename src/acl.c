@@ -112,7 +112,7 @@ char getAccessType(char* buffer) {
 char searchName(int fd, regex_t* regex) {
 
     char buffer[LINE_READ];
-    while (readline(fd, buffer) != NULL) {
+    while (readline(fd, buffer)) {
         if (buffer[0] == '#') continue;
         if (checkMatch(buffer, regex)) {
             if (DEBUG) printf("match on:\n%s", buffer);
