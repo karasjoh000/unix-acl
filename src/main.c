@@ -52,6 +52,9 @@ int main(int argc, char **argv) {
 
 
     info.effective = geteuid();
+    info.real = getuid();
+
+    if (DEBUG) printf("real uid: %d effective uid: %d\n", info.real, info.effective);
 
     info.aclFile = createAclPath(argv[1], acl);
     info.sourceFile = argv[1];
@@ -77,9 +80,9 @@ int main(int argc, char **argv) {
         exit(1);
 
     info.destFile = argv[2];
-    info.real = getuid();
 
-    if (DEBUG) printf("real uid: %d effective uid: %d\n", info.real, info.effective);
+
+
 
     if (!get(&info)) {
         exit(0);
