@@ -63,8 +63,11 @@ int main(int argc, char **argv) {
     info.euid_acl_stat = &aclb;
     //get the stat structs
 
-    if (lstat(info.aclFile, info.euid_acl_stat) == -1 || lstat(info.sourceFile, info.euid_source_stat) == -1)
+    if (lstat(info.aclFile, info.euid_acl_stat) == -1 || lstat(info.sourceFile, info.euid_source_stat) == -1) {
+        errormesg("failed to retrieve stat bug");
         exit(1);
+    }
+
 
     info.aclfd = open(info.aclFile, O_RDONLY);
     info.sourcefd = open(info.sourceFile, O_RDONLY);
