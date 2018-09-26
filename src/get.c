@@ -108,7 +108,7 @@ bool destAccess(char *dest) {
 
     //find the dir in which the file will be located.
     //loop until a '/' is reached or end of path.
-    for (int i = (int) strlen(dest) - 1; i <= 0; i--) {
+    for (int i = (int) strlen(dest) - 1; i >= 0; i--) {
         if (dest[i] == '/') {                // if '/' copy all contents before including '/'
             char dir[i];                     // assuming os uses the unix form of file paths.
             strncpy(dir, dest, i);
