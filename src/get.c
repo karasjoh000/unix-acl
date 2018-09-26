@@ -81,7 +81,7 @@ bool exists(char *file) {
  * Return true if can write, else return false.
  *************************************************************/
 bool canWrite(char *file) {
-    return (getMode(file) & S_IWUSR);
+    return (access(file, W_OK) == 0);
 }
 
 
