@@ -137,11 +137,11 @@ char *nameFromUid(uid_t id) {
  * path, acl path, effective uid, and real uid. Returns True if conditions for
  * reading are satisfied and false if not.
  * Specifically get checks for:
- *   1. source file exists
- *   2. acl file exists
- *   3. source is owned by the effective uid of the process (at the start of process)
- *   4. acl is owned by euid.
- *   5. acl does not have any group and other privelages
+ *   1. source file exists -
+ *   2. acl file exists -
+ *   3. source is owned by the effective uid of the process (at the start of process) -
+ *   4. acl is owned by euid. -
+ *   5. acl does not have any group and other privelages -
  *   6. acl file is not a symbolic link
  *   7. source file is an ordinary file (sourceFile)
  *   8. effective uid has read access to source and acl.
