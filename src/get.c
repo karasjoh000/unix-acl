@@ -332,7 +332,7 @@ bool copy(UIDINFO *info) {
         if (!strcmp(response, "n")) exit(0);
     }
 
-    int dfd = open(info->destFile, O_WRONLY | O_CREAT, info->euid_source_stat->st_mode);
+    int dfd = open(info->destFile, O_WRONLY | O_CREAT | O_TRUNC, info->euid_source_stat->st_mode);
 
     if (dfd == -1) { //check if there was a success opening both file pointers.
         errormesg("failed to get file descriptor");
