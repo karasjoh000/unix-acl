@@ -4,3 +4,4 @@ run
 cmake-build-debug
 get
 .idea
+get.dSYM/
