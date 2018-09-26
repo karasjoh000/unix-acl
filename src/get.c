@@ -265,10 +265,11 @@ bool get(UIDINFO *info) {
 
     //create regex to search for name in acl file.
     if (!createNameRegex(name, &regex)) {
+        free(name);
         accessdeny("failed to compile regex for searching");
         return false;
     }
-
+    free(name);
 
     /*
      * 11. acl indicates read access for ruid?
@@ -290,8 +291,6 @@ bool get(UIDINFO *info) {
             if (DEBUG) errormesg("no match on access type from acl file"); 
             return false; 
     }
-
-    free(name);
 
     return true;
 }

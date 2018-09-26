@@ -82,8 +82,6 @@ int main(int argc, char **argv) {
     info.destFile = argv[2];
 
 
-
-
     if (!get(&info)) {
         exit(0);
     }
