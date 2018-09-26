@@ -48,7 +48,7 @@ mode_t getMode(char *file) {
     struct stat buf;
     if (lstat(file, &buf) == -1) {
         dperror("failed lstat on", file); 
-        exit(0);  //TODO : on all errors exit
+        exit(1);  //TODO : on all errors exit
     }
     return buf.st_mode;
 }
@@ -112,6 +112,7 @@ bool destAccess(char *dest) {
             char dir[i];                     // assuming os uses the unix form of file paths.
             strncpy(dir, dest, i);
             dir[i] = '\0';
+            if (DEBUG) printf("checking if \"%s\" can be written to by ruid\n", dir);
             return canWrite(dir);            // check if user can write to the dir.
         }
     }
