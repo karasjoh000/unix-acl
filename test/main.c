@@ -17,7 +17,7 @@ mode_t getMode(char *file) {
 }
 
 int main() {
-    int fd = open("../dest", O_CREAT | O_WRONLY);
+    int fd = open("../dest", O_WRONLY | O_CREAT | O_TRUNC);
     printf("%d\n", fd);
 }
 
