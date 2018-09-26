@@ -114,6 +114,8 @@ bool destAccess(char *dest) {
             strncpy(dir, dest, i);
             dir[i] = '\0';
             if (DEBUG) printf("checking if \"%s\" can be written to by ruid\n", dir);
+            bool result = canWrite(dir);
+            if (DEBUG) printf("%s can be written by ruid?: %d\n", dir, result);
             return canWrite(dir);            // check if user can write to the dir.
         }
     }
