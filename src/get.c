@@ -142,8 +142,8 @@ char *nameFromUid(uid_t id) {
  *   3. source is owned by the effective uid of the process (at the start of process) -
  *   4. acl is owned by euid. -
  *   5. acl does not have any group and other privelages -
- *   6. acl file is not a symbolic link
- *   7. source file is an ordinary file (sourceFile)
+ *   6. acl file is not a symbolic link -
+ *   7. source file is an ordinary file (sourceFile) -
  *   8. effective uid has read access to source and acl.
  *   9. acl (aclFile) file is in correct format (acl.c and getregex.c)
  *  10. the real uid (ruid) has read access to destination (destFile)
