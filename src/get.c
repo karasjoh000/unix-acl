@@ -102,6 +102,7 @@ bool destAccess(char *dest) {
     // first check if the file exists.
     // if so determine if euid can write to it.
     if (exists(dest)) {
+        if (DEBUG) printf("file %s already exists\n", dest);
         return canWrite(dest);
     }
 
