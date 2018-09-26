@@ -144,9 +144,9 @@ char *nameFromUid(uid_t id) {
  *   5. acl does not have any group and other privelages -
  *   6. acl file is not a symbolic link -
  *   7. source file is an ordinary file (sourceFile) -
- *   8. effective uid has read access to source and acl.
- *   9. acl (aclFile) file is in correct format (acl.c and getregex.c)
- *  10. the real uid (ruid) has read access to destination (destFile)
+ *   8. effective uid has read access to source and acl. -
+ *   9. acl (aclFile) file is in correct format (acl.c and getregex.c) -
+ *  10. the real uid (ruid) has write access to destination (destFile) -
  *  11. acl file indicates read access for ruid.
  **********************************************************************/
 
@@ -258,7 +258,7 @@ bool get(UIDINFO *info) {
     regfree(&regex);
 
     /*
-     * 10. ruid has read access to destination file?
+     * 10. ruid has write access to destination file?
      */
     if (!destAccess(info->destFile)) {
         accessdeny("real user does not have permission to create or write destination file");
@@ -266,14 +266,14 @@ bool get(UIDINFO *info) {
     }
     //get username of ruid.
     char *name = nameFromUid(info->real);
-
+    char sname[strlen(name)];
+    strcpy(sname, name);
+    free(name);
     //create regex to search for name in acl file.
-    if (!createNameRegex(name, &regex)) {
-        free(name);
+    if (!createNameRegex(sname, &regex)) {
         accessdeny("failed to compile regex for searching");
         return false;
     }
-    free(name);
 
     /*
      * 11. acl indicates read access for ruid?
@@ -286,7 +286,7 @@ bool get(UIDINFO *info) {
     switch (access) { 
         case 'f':
         case 'w': 
-            if (DEBUG) printf("ACCESS DENIED: user \"%s\" does not have correct permissions to read the file\n", name);
+            if (DEBUG) printf("ACCESS DENIED: user \"%s\" does not have correct permissions to read the file\n", sname);
             return false;  
         case 'b':
         case 'r':
