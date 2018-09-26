@@ -18,7 +18,7 @@
 #include <sys/uio.h>
 
 #define ACL_EXT ".access"
-#define LINE_READ 120
+#define LINE_READ 200
 
 
 #define ACL_ROW "^[[:blank:]]*[[:alnum:]][[:alnum:]]*[[:blank:]][[:blank:]]*[rwb][[:blank:]]*\n*$"

@@ -27,45 +27,6 @@
 
 #define LINE_READ 120
 
-/*
- * **************  uid_t getOwner(char *file) *************
- * Returns the uid_t of owner. If error exit.
- *************************************************************/
-uid_t getOwner(char *file) { //take the stat buffer and save it into somewhere, like the info page.
-    struct stat buf;
-    if (stat(file, &buf) == -1) {
-        dperror("failed stat on", file); 
-        exit(0);
-    }
-    return buf.st_uid;
-}
-
-/*
- * *************  mode_t getMode(char *file)   *****************
- * Get the permissions of file. If error, exit.
- *************************************************************/
-mode_t getMode(char *file) {
-    struct stat buf;
-    if (lstat(file, &buf) == -1) {
-        dperror("failed lstat on", file); 
-        exit(1);  //TODO : on all errors exit
-    }
-    return buf.st_mode;
-}
-
-/*
- * ****************  bool isReg(char *file) *****************
- * Check if file is a regular file. If error exit.
- * Return true if regular, false if not.
- *************************************************************/
-bool isReg(char *file) {
-    struct stat buf;
-    if (lstat(file, &buf) == -1) {
-        dperror("failed lstat on", file); 
-        return false; 
-    }
-    return S_ISREG(buf.st_mode); //TODO check is this checks for symlinks.
-}
 
 /*
  * *************   bool exists(char *file)   *****************
@@ -126,7 +87,9 @@ bool destAccess(char *dest) {
 char *nameFromUid(uid_t id) {
     struct passwd *pws;
     pws = getpwuid(id);
+    if(!pws) exit(1);
     char *name = (char *) malloc(strlen(pws->pw_name));
+    if(!name) exit(1);
     return strcpy(name, pws->pw_name);
 }
 
@@ -147,7 +110,7 @@ char *nameFromUid(uid_t id) {
  *   8. effective uid has read access to source and acl. -
  *   9. acl (aclFile) file is in correct format (acl.c and getregex.c) -
  *  10. the real uid (ruid) has write access to destination (destFile) -
- *  11. acl file indicates read access for ruid.
+ *  11. acl file indicates read access for ruid. -
  **********************************************************************/
 
 //TODO catch errors on seteuid and all other system calls.
