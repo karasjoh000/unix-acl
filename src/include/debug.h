@@ -5,7 +5,7 @@
 #ifndef CS483_P1_DEBUG_H
 #define CS483_P1_DEBUG_H
 
-#define DEBUG 1
+#define DEBUG 0
 
 void accessdeny(char*);
 void errormesg(char* mesg);
