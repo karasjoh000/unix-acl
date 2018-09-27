@@ -115,8 +115,6 @@ char *nameFromUid(uid_t id) {
  *  10. the real uid (ruid) has write access to destination (destFile) -
  *  11. acl file indicates read access for ruid. -
  **********************************************************************/
-
-//TODO catch errors on seteuid and all other system calls.
 bool get(UIDINFO *info) {
 
 
@@ -191,22 +189,22 @@ bool get(UIDINFO *info) {
         accessdeny("source file is not a regular file");
         return false;
     }
-
     /*
-     * 8. Effective uid can read source?
-     */
+     //* 8. Effective uid can read source?
+
     if (!(info->euid_source_stat->st_mode & S_IRUSR)) {
         accessdeny("effective user cannot read the file");
         return false;
     }
 
-    /*
-     * 8. Effective uid can read acl?
-     */
+
+     //* 8. Effective uid can read acl?
+
     if (!(info->euid_acl_stat->st_mode & S_IRUSR)) {
         accessdeny("effective user cannot read the file");
         return false;
     }
+     */
 
     // Create a regex to check the format of acl file.
     regex_t regex;
