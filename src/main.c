@@ -22,6 +22,11 @@
  * are stored into the UIDINFO struct.
  */
 
+ /*
+  * The main function performs the first checks like if acl and source exist and if effective user can read them.
+  * This is checked by attempting to get a fd from open function on read access.
+  */
+
 
 int main(int argc, char **argv) {
 
@@ -49,6 +54,7 @@ int main(int argc, char **argv) {
     info.euid_acl_stat = &aclb;
     //get the stat structs
 
+     // if error then files might not exist.
     if (lstat(info.aclFile, info.euid_acl_stat) == -1 || lstat(info.sourceFile, info.euid_source_stat) == -1) {
         errormesg("failed to retrieve stat bug");
         exit(1);
@@ -65,6 +71,7 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
+    // open is successful ONLY if source and acl exist and effective has read access to them.
     if (info.aclfd == -1 || info.sourcefd == -1)
         exit(1);
 

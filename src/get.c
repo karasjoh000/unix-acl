@@ -104,51 +104,16 @@ char *nameFromUid(uid_t id) {
  * path, acl path, effective uid, and real uid. Returns True if conditions for
  * reading are satisfied and false if not.
  * Specifically get checks for:
- *   existence of source file and acl file are checked when fd's are retrieved in the main function.
  *   3. source is owned by the effective uid of the process (at the start of process) -
  *   4. acl is owned by euid. -
  *   5. acl does not have any group and other privelages -
  *   6. acl file is not a symbolic link -
  *   7. source file is an ordinary file (sourceFile) -
- *   8. effective uid has read access to source and acl. -
  *   9. acl (aclFile) file is in correct format (acl.c and getregex.c) -
  *  10. the real uid (ruid) has write access to destination (destFile) -
  *  11. acl file indicates read access for ruid. -
  **********************************************************************/
 bool get(UIDINFO *info) {
-
-
-    /*
-    // The first set of checks need effective uid privileges
-    if(seteuid(info->effective) == -1) {
-        euiderr();
-        exit(0);
-    }
-
-
-
-     //* 1. Source file exists?
-
-    if (!exists(info->sourceFile)) {
-        accessdeny("source file does not exist");
-        return false;
-    }
-
-
-     //* 2. Acl file exists?
-
-    if (!exists(info->aclFile)) {
-        accessdeny("acl file does not exist");
-        return false;
-    }
-
-
-    // switch right back to real
-    if(seteuid(info->real) == -1) {
-        euiderr();
-        exit(0);
-    }
-    */
 
     /*
      * 3. Source is owned by effective uid of process?
@@ -189,22 +154,6 @@ bool get(UIDINFO *info) {
         accessdeny("source file is not a regular file");
         return false;
     }
-    /*
-     //* 8. Effective uid can read source?
-
-    if (!(info->euid_source_stat->st_mode & S_IRUSR)) {
-        accessdeny("effective user cannot read the file");
-        return false;
-    }
-
-
-     //* 8. Effective uid can read acl?
-
-    if (!(info->euid_acl_stat->st_mode & S_IRUSR)) {
-        accessdeny("effective user cannot read the file");
-        return false;
-    }
-     */
 
     // Create a regex to check the format of acl file.
     regex_t regex;
@@ -272,7 +221,7 @@ bool get(UIDINFO *info) {
  * Given two file pointers, copies one stream into the other.
  * If fail return false.
  *************************************************************/
-void copyfile(int sfd, int dfd) { //TODO use read, write, open functions.
+void copyfile(int sfd, int dfd) {
     char buffer[LINE_READ];
     ssize_t rr, wr;
     while ((rr = read(sfd, buffer, LINE_READ))) {
