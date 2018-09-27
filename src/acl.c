@@ -18,7 +18,7 @@
 #include <sys/uio.h>
 
 #define ACL_EXT ".access"
-#define LINE_READ 200
+#define LINE_READ 400
 
 
 #define ACL_ROW "^[[:blank:]]*[[:alnum:]][[:alnum:]]*[[:blank:]][[:blank:]]*[rwb][[:blank:]]*\n*$"
@@ -64,7 +64,7 @@ bool readline(int fd, char* buffer) {
     int i = 0;
     ssize_t rd;
     do {
-        if ( i > LINE_READ) exit(1);
+        if ( i > LINE_READ) exit(1); //no more space in buffer.
         if ((rd = read(fd, &buffer[i], 1)) == -1) exit(1);
     } while(buffer[i++] != '\n');
     buffer[i] = '\0';

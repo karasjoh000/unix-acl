@@ -17,34 +17,20 @@
 #include <fcntl.h>
 
 
-/***************************
-  Checks if ACL file exists,
-           has malformed entries,
-	   has empty lines,
-	   is a symbolic link
-	   is avialable to any world or group,
-	   or if .ext file is not ordinary.
-• source is owned by the effective uid of the
-  executing process,
-• the effective uid of the executing process has
-  read access to source,
-• the file source.access exists and indicates read
-  access for the real uid of the executing process,
-• and the real uid of the executing process can
-  write the file destination.
-  if any above are true then no access is provided.
-
-**************************************************/
+/*
+ * At the beginning of the program all the effective users resources that are needed to perform checks
+ * are stored into the UIDINFO struct.
+ */
 
 
-
-//TODO catch errors on seteuid and all other system calls.
 int main(int argc, char **argv) {
 
     if (argc != 3) exit(0);
 
 
-
+    /*
+     *  create a UIDINFO struct and put all the resources there like fd's and stat structs.
+     */
     char acl[strlen(argv[1]) + strlen(ACL_EXT)];
 
     UIDINFO info;
@@ -76,7 +62,7 @@ int main(int argc, char **argv) {
     if(seteuid(info.real) == -1) {
         euiderr();
         if(DEBUG) perror("ERROR:");
-        exit(0);
+        exit(1);
     }
 
     if (info.aclfd == -1 || info.sourcefd == -1)
@@ -85,14 +71,15 @@ int main(int argc, char **argv) {
     info.destFile = argv[2];
 
 
-    if (!get(&info)) {
-        exit(0);
+    if (!get(&info)) {  // perform all the checks in the get method
+        exit(1);
     }
 
-    if (!copy(&info)) {
-        exit(0);
+    if (!copy(&info)) { //if checks in get are successful copy the file.
+        exit(1);
     }
 
+    //release resources stored in struct.
     close(info.sourcefd);
     close(info.aclfd);
 

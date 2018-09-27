@@ -84,6 +84,10 @@ bool destAccess(char *dest) {
     return canWrite(".");
 }
 
+/*
+ * *********char *nameFromUid(uid_t id)*********
+ * given a uid returns the username. exits on error with 1.
+ **********************************************/
 char *nameFromUid(uid_t id) {
     struct passwd *pws;
     pws = getpwuid(id);
@@ -100,8 +104,7 @@ char *nameFromUid(uid_t id) {
  * path, acl path, effective uid, and real uid. Returns True if conditions for
  * reading are satisfied and false if not.
  * Specifically get checks for:
- *   1. source file exists -
- *   2. acl file exists -
+ *   existence of source file and acl file are checked when fd's are retrieved in the main function.
  *   3. source is owned by the effective uid of the process (at the start of process) -
  *   4. acl is owned by euid. -
  *   5. acl does not have any group and other privelages -
@@ -117,34 +120,37 @@ char *nameFromUid(uid_t id) {
 bool get(UIDINFO *info) {
 
 
-
+    /*
     // The first set of checks need effective uid privileges
     if(seteuid(info->effective) == -1) {
         euiderr();
         exit(0);
     }
 
-    /*
-     * 1. Source file exists?
-     */
+
+
+     //* 1. Source file exists?
+
     if (!exists(info->sourceFile)) {
         accessdeny("source file does not exist");
         return false;
     }
 
-    /*
-     * 2. Acl file exists?
-     */
+
+     //* 2. Acl file exists?
+
     if (!exists(info->aclFile)) {
         accessdeny("acl file does not exist");
         return false;
     }
 
+
+    // switch right back to real
     if(seteuid(info->real) == -1) {
         euiderr();
         exit(0);
     }
-
+    */
 
     /*
      * 3. Source is owned by effective uid of process?
