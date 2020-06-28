@@ -5,3 +5,4 @@ cmake-build-debug
 get
 .idea
 get.dSYM/
+*.DS_Store
